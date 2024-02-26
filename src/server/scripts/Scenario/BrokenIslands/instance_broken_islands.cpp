@@ -71,26 +71,26 @@ public:
                     if (player->GetMapId() != 1460)
                         return;
 
-                    player->CreateConversation(player->GetTeam() == ALLIANCE ? 923 : 3598);
+                    player->CreateConversation(player->GetTeam() == ALLIANCE ? CONV_A1 : CONV_H1);
                     player->AddDelayedEvent(15000, [player]() -> void
                     {
                         if (player->GetMapId() != 1460)
                             return;
 
-                        player->CreateConversation(player->GetTeam() == ALLIANCE ? 924 : 3599);
+                        player->CreateConversation(player->GetTeam() == ALLIANCE ? CONV_A2 : CONV_H2);
                         player->AddDelayedEvent(13100, [player]() -> void
                         {
                             if (player->GetMapId() != 1460)
                                 return;
 
-                            player->CreateConversation(player->GetTeam() == ALLIANCE ? 925 : 3600);
+                            player->CreateConversation(player->GetTeam() == ALLIANCE ? CONV_A3 : CONV_H3);
                         });
                     });
                 });
             }
 
-            player->KilledMonsterCredit(108920);
-            player->KilledMonsterCredit(113118);
+            player->KilledMonsterCredit(NPC_CAPT_ANGELICA);
+            player->KilledMonsterCredit(NPC_CPT_RUSSO);
 
             player->ApplyModFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_IN_PVP, true);
             player->ApplyModFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_PVP_TIMER, false);
@@ -114,7 +114,9 @@ public:
                         if (player->GetTeam() == ALLIANCE)
                         {
                             //X: 2.39286 Y: 1.694546 Z: 5.205733 O: 3.155922
-                            init.MoveTo(2.39286f, 1.694546f, 5.205733f, false, true);
+                            //init.MoveTo(2.39286f, 1.694546f, 5.205733f, false, true);
+                            // Raise Z to prevent players from falling through boat
+                            init.MoveTo(2.39286f, 1.694546f, 5.705733f, false, true);
                             init.SetFacing(3.155922f);
                         }else
                         {
@@ -186,27 +188,27 @@ public:
             switch (unit->GetEntry())
             {
                 //Demons slain
-                case 90686:
-                case 109591:
-                case 109592:
-                case 109604:
+                case NPC_FELSTKR_DREADHND:
+                case NPC_FELGRD_LEGIONNAIRE:
+                case NPC_FELGRD_LEGIONNAIRE_2:
+                case NPC_FELGRD_LEGIONNAIRE_3:
                     updateCriteriaForPlayers(44095); // Alliance
                     updateCriteriaForPlayers(54116); // Horde
                     break;
                 //Fel Lords slain
-                case 91588:
-                case 109586:
-                case 109587:
+                case NPC_FEL_LORD_KURDUZ:
+                case NPC_FEL_LORD_RAKKAN:
+                case NPC_FEL_LORD_ZARDAK:
                     updateCriteriaForPlayers(52643); // Alliance
                     break;
-                case 113036:
-                case 113037:
-                case 113038:
+                case NPC_FEL_LORD_RAZZAR:
+                case NPC_FEL_LORD_DARAKK:
+                case NPC_FEL_LORD_KURRZ:
                     updateCriteriaForPlayers(54117); // Horde
                     break;
                 //Spires of Woe destroyed // vechicle id 109494
-                case 91704:     // alliance
-                case 110618:    // horde
+                case NPC_ANCHOR_CRYSTAL_A:     // alliance
+                case NPC_ANCHOR_CRYSTAL_H:    // horde
                 {
                     uint32 c = 0;
                     if (auto owner = unit->GetAnyOwner())
@@ -343,7 +345,7 @@ public:
                     {
                         if (wave_current == 0)
                         {
-                            SetData(SCENARION_STEP_9, ++wave_current);
+                            SetData(SCENARIO_STEP_9, ++wave_current);
                             Creature* gualdan = instance->GetCreature(GetGuidData(NPC_GULDAN));
                             if (!gualdan)
                                 return;
@@ -355,7 +357,7 @@ public:
                             Creature* gualdan = instance->GetCreature(GetGuidData(NPC_GULDAN));
                             if (!gualdan)
                                 return;
-                            gualdan->AI()->SetData(SCENARION_STEP_9, 2);
+                            gualdan->AI()->SetData(SCENARIO_STEP_9, 2);
                         }
                     }
                     break;
@@ -373,7 +375,7 @@ public:
             // 952 2
             if (objective == 44077) // алики
             {
-                if (Creature* sayer = instance->GetCreature(GetGuidData(90717)))
+                if (Creature* sayer = instance->GetCreature(GetGuidData(NPC_GENN)))
                 {
                     switch(count_)
                     {
@@ -392,7 +394,7 @@ public:
             
             if (objective == 54114) // орда
             {
-                if (Creature* sayer = instance->GetCreature(GetGuidData(90708)))
+                if (Creature* sayer = instance->GetCreature(GetGuidData(NPC_VOLJIN)))
                 {
                     switch(count_)
                     {
@@ -458,48 +460,48 @@ public:
         {
             switch (creature->GetEntry())
             {
-                case 55091:
+                case 55091: // General purpose bunny
                 if (creature->GetDistance2d(1241.09f, 2442.19f) >= 10.0f)
                     break;
-                case NPC_STAGE3_HORDE_FEL_COMMANDER:
-                case 90708:
-                case 90717:
+                case NPC_FEL_CMDR_AZGALOR:
+                case NPC_VOLJIN:
+                case NPC_GENN:
                 case NPC_KROSS:
                 case NPC_JAINA:
                 case NPC_VARIAN: //appear on step3 (4)
                 case NPC_GULDAN: //appear on step6 (7)
                 case NPC_TIRION: //sppear on step6 (7)
-                case NPC_SYLVANA:
-                case 90711:
-                case 90705:
+                case NPC_SYLVANAS:
+                case NPC_THRALL:
+                case NPC_DRD_CMDR_ARGANOTH:
                     creature->setActive(true);
                     creature->SetWorldObject(true);
                     objects[creature->GetEntry()] = creature->GetGUID();
                     break;
                 //FINAL WAVES.
                 //ServerToClient: SMSG_UPDATE_OBJECT (0x2802) Length: 1759 ConnIdx: 0 Time: 06/05/2016 08:38:19.304 Number: 260687
-                case 105199:
-                case 111074:
-                case 105200:
+                case 105199: // Felstalker Dreadhound
+                case 111074: // Grinning Shadowstalker
+                case 105200: // Felguard Invader
                     final_waves[0].push_back(creature->GetGUID());
                     prepareWaveCre(creature);
                     break;
                 //ServerToClient : SMSG_UPDATE_OBJECT(0x2802) Length : 512 ConnIdx : 0 Time : 06 / 05 / 2016 08 : 38 : 22.887 Number : 260790
-                case 105206:
-                case 105205:
+                case 105206: // Wrathguard Dreadblade
+                case 105205: // Mo'arg Spinebreaker
                     final_waves[1].push_back(creature->GetGUID());
                     prepareWaveCre(creature);
                     break;
                 //ServerToClient : SMSG_UPDATE_OBJECT(0x2802) Length : 916 ConnIdx : 0 Time : 06 / 05 / 2016 08 : 39 : 01.711 Number : 278391
-                case 111175:
-                case 111174:
-                case 111173:
-                case 111167:
+                case 111175: // The Overseer
+                case 111174: // Vaultwarden Umbra
+                case 111173: // Soulchaser
+                case 111167: // Lochaber
                 //case 105206:
-                case 111171:
-                case 111156:
-                case 111157:
-                case 111155:
+                case 111171: // Carnivore
+                case 111156: // Fel Lord Dakuur
+                case 111157: // Pilik
+                case 111155: // Makaan the Malevolent
                     final_waves[2].push_back(creature->GetGUID());
                     prepareWaveCre(creature);
                     break;
@@ -616,7 +618,7 @@ public:
         {
             switch (type)
             {
-                case SCENARION_STEP_9:
+                case SCENARIO_STEP_9:
                     wave_current = data;
                     releaseWave(data);
                     break;
@@ -625,14 +627,13 @@ public:
 
                     if (team == ALLIANCE)
                     {
-                        massive_cast(208513);
-                        //Alliance teleport.
-                        massive_cast(208514);
+                        massive_cast(208513); // Broken Shore complete - A
+                        massive_cast(208514); // Teleport to Stormwind
                     }
                     else
                     {
-                        massive_cast(208516);
-                        massive_cast(208517);
+                        massive_cast(208516); // Broken Shore complete - H
+                        massive_cast(208517); // Teleport to Org
                     }
                     break;
                 default:
@@ -677,7 +678,7 @@ public:
 
         void onScenarionNextStep(uint32 newStep) override
         {
-            std::vector<uint32> const vec{ 90708 ,NPC_SYLVANA, 90717, NPC_VARIAN };
+            std::vector<uint32> const vec{ NPC_VOLJIN ,NPC_SYLVANAS, NPC_GENN, NPC_VARIAN };
             for (auto id : vec)
                 if (Creature* cre = instance->GetCreature(GetGuidData(id)))
                     cre->AI()->DoAction(newStep);
@@ -687,8 +688,8 @@ public:
                 case 2:
                     if (team == HORDE)
                     {
-                        if (Creature* fel = instance->GetCreature(GetGuidData(NPC_STAGE3_HORDE_FEL_COMMANDER)))
-                            fel->AI()->DoAction(NPC_STAGE3_HORDE_FEL_COMMANDER);
+                        if (Creature* fel = instance->GetCreature(GetGuidData(NPC_FEL_CMDR_AZGALOR)))
+                            fel->AI()->DoAction(NPC_FEL_CMDR_AZGALOR);
                     }
                     break;
                 case 4:
@@ -698,7 +699,7 @@ public:
                 case 5:
                     if (team == ALLIANCE)
                     {
-                        massive_cast(208379);
+                        massive_cast(208379); // End of stage conversation
                         if (Creature* targ = instance->GetCreature(GetGuidData(55091)))
                         {
                             if (GameObject* go = targ->FindNearestGameObject(240211, 100.0f))
@@ -712,7 +713,7 @@ public:
                     else
                     {
                         massive_cast(224951);
-                        if (Creature* checker = instance->GetCreature(GetGuidData(90708)))
+                        if (Creature* checker = instance->GetCreature(GetGuidData(NPC_VOLJIN)))
                         {
                             if (Creature* targ = checker->FindNearestCreature(55091, 150.0f))
                             {

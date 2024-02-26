@@ -155,7 +155,7 @@ public:
                         pDoneBy->AttackStop();
                         me->CastSpell(pDoneBy, SPELL_DUEL_VICTORY, true);
                         lose = true;
-                        me->CastSpell(me, 7267, true);
+                        me->CastSpell(me, SPELL_GROVEL, true); // grovel
                         me->RestoreFaction();
                     }
                 }
@@ -185,13 +185,13 @@ public:
             {
                 if (lose)
                 {
-                    if (!me->HasAura(7267))
+                    if (!me->HasAura(SPELL_GROVEL))
                         EnterEvadeMode();
                     return;
                 }
                 else if (me->getVictim() && me->getVictim()->GetTypeId() == TYPEID_PLAYER && me->getVictim()->HealthBelowPct(10))
                 {
-                    me->getVictim()->CastSpell(me->getVictim(), 7267, true); // beg
+                    me->getVictim()->CastSpell(me->getVictim(), SPELL_GROVEL, true); // grovel
                     me->getVictim()->RemoveGameObject(SPELL_DUEL_FLAG, true);
                     EnterEvadeMode();
                     return;
@@ -199,27 +199,27 @@ public:
 
                 if (!UpdateVictim() || me->HasUnitState(UNIT_STATE_CASTING))
                     return;
-
+                
                 if (spelltimer <= uiDiff)
                 {
                     uint32 spell = 0;
                     switch (me->GetEntry())
                     {
-                        case 108752:
-                            spell = 172673;
+                        case NPC_CIARRA:            // Ciarra
+                            spell = SPELL_HOLY_SMITE;     // Holy Smite
                             spelltimer = 2000;
                             break;
-                        case 108765:
-                            spell = 198623;
+                        case NPC_SEONA:            // Seona
+                            spell = SPELL_FIREBALL;     // Fireball
                             spelltimer = 2000;
                             break;
-                        case 108767:
-                        case 108750:
-                            spell = 172757;
+                        case NPC_KIRUUD:            // Kiruud
+                        case NPC_EUNNA:            // Eunna
+                            spell = SPELL_BLOODTHIRST;     // Bloodthirst
                             spelltimer = 11000;
                             break;
-                        case 108723:
-                            spell = 171777;
+                        case NPC_KIHRA:            // Kihra
+                            spell = SPELL_STARFIRE;     // Starfire
                             spelltimer = 5500;
                             break;
                         default:
@@ -498,7 +498,7 @@ public:
 
         //214608
         player->KilledMonsterCredit(creature->GetEntry());
-        player->CastSpell(player, 216356, false); //scene
+        player->CastSpell(player, 216356, false); // Scene: Leave for Broken Shore - Alliance
 
         return true;
     };
@@ -515,7 +515,7 @@ public:
 
         //214608
         player->KilledMonsterCredit(creature->GetEntry());
-        player->CastSpell(player, 225147, false); //scene
+        player->CastSpell(player, 225147, false); // Scene: Leave for Broken Shore - Horde
 
         return true;
     };
@@ -640,8 +640,8 @@ public:
                             plr->m_movementInfo.transport.Reset();
                         }
 
-                        plr->SendMovieStart(486);
-                        plr->CastSpell(plr, plr->GetTeam() == ALLIANCE ? 199358 : 225152, false);
+                        plr->SendMovieStart(486); // Scene upon landing
+                        plr->CastSpell(plr, plr->GetTeam() == ALLIANCE ? SPELL_S1_TELEPORT_A : SPELL_S1_TELEPORT_H, false); // Stage 1 teleport for Alliance and Horde, respectively
                     }
             }
         }
@@ -695,6 +695,7 @@ public:
                 m->LoadGrid(destTarget.m_positionX, destTarget.m_positionY);
 
                 DynamicObject* dynObj = new DynamicObject(true);
+                // Not sure what these objects are
                 if (!dynObj->CreateDynamicObject(sObjectMgr->GetGenerator<HighGuid::DynamicObject>()->Generate(), player, player->GetTeam() == HORDE ? 225153 : 215222, destTarget, 1.0f, DYNAMIC_OBJECT_AREA_SPELL))
                 {
                     delete dynObj;
@@ -705,6 +706,7 @@ public:
                 dynObj->SetDuration(60000);
 
                 player->SetViewpoint(dynObj, true);
+                // As above, not sure what these values do
                 player->SetUInt32Value(UNIT_FIELD_CHANNEL_SPELL, player->GetTeam() == HORDE ? 225153 : 215222);
                 player->SetUInt32Value(UNIT_FIELD_CHANNEL_SPELL_XSPELL_VISUAL, player->GetTeam() == HORDE ? 107211 : 101301);
             }
@@ -761,7 +763,7 @@ public:
 
             for (Map::PlayerList::const_iterator i = PlList.begin(); i != PlList.end(); ++i)
                 if (Player* plr = i->getSource())
-                    plr->CastSpell(plr, plr->GetTeam() == ALLIANCE ? 199358 : 225152, false);
+                    plr->CastSpell(plr, plr->GetTeam() == ALLIANCE ? SPELL_S1_TELEPORT_A : SPELL_S1_TELEPORT_H, false);
         }
         if (type == "complete")
         {
@@ -783,7 +785,7 @@ public:
                     player->m_movementInfo.transport.Reset();
                 }
 
-                player->CastSpell(player, player->GetTeam() == ALLIANCE ? 199358 : 225152, false);
+                player->CastSpell(player, player->GetTeam() == ALLIANCE ? SPELL_S1_TELEPORT_A : SPELL_S1_TELEPORT_H, false);
             }*/
         }
         return true;
@@ -852,14 +854,15 @@ public:
             Reset();
         }
 
+        // Scheduling events during Arganoth battle
         void EnterCombat(Unit* who) override
         {
             firstcast = true;
             below_1 = false;
-            events.ScheduleEvent(EVENT_1, 8000); // 200465
-            events.ScheduleEvent(EVENT_2, 13000); // 183956
-            events.ScheduleEvent(EVENT_3, 9000); // conv
-            who->CastSpell(who, 199677);
+            events.ScheduleEvent(EVENT_1, 8000); // 200465, Fel Crack
+            events.ScheduleEvent(EVENT_2, 13000); // 183956, Summon Felblaze Infernal
+            events.ScheduleEvent(EVENT_3, 9000); // Arganoth 25% conv
+            who->CastSpell(who, CONV_ARGANOTH_LANDS); // Arganoth landing conversation
         }
 
         void JustDied(Unit* who) override
@@ -892,7 +895,7 @@ public:
 
                     if (script->getScenarionStep() == 2)
                     {
-                        DoCast(218619);
+                        DoCast(CONV_TWR_DSTRY_2);
                         onFinish = true;
                         SetNextWaypoint(9, false, false);
                     }
@@ -905,7 +908,7 @@ public:
         {
             if (!below_1 && me->HealthBelowPctDamaged(3, damage))
             {
-                me->CastSpell(me, 182647, true);
+                me->CastSpell(me, CONV_ARGANOTH_DEATH, true);
                 below_1 = true;
                 damage = 0;
                 // me->Kill(me);
@@ -920,7 +923,7 @@ public:
                     SetNextWaypoint(1, false, false);
                     break;
                 case 9:
-                    DoCast(199676);
+                    DoCast(CONV_TWR_DSTRY_3); // Third tower destroyed
                     break;
                 case 11:
                     me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_IMMUNE_TO_PC);
@@ -929,7 +932,7 @@ public:
 
                     if (InstanceScript *script = me->GetInstanceScript())
                         if (Map *m = script->instance)
-                            if (Creature* sayer = m->GetCreature(script->GetGuidData(90717)))
+                            if (Creature* sayer = m->GetCreature(script->GetGuidData(NPC_GENN)))
                                 sayer->AI()->AttackStart(me);
                     break;
                 default:
@@ -941,7 +944,7 @@ public:
                     {
                         if (script->getScenarionStep() == 2)
                         {
-                            DoCast(218619);
+                            DoCast(CONV_TWR_DSTRY_2);
                             onFinish = true;
                             SetNextWaypoint(9, false, false);
                         }
@@ -968,20 +971,21 @@ public:
                 switch (eventId)
                 {
                     case EVENT_1:
-                        DoCast(200465);
+                        DoCast(SPELL_FEL_CRACK);
                         events.ScheduleEvent(EVENT_1, 8000);
                         break;
                     case EVENT_2:
+                        // If we haven't already done the mid-combat convo, do it now
                         if (firstcast)
                         {
-                            DoCast(182441);
+                            DoCast(CONV_ARGANOTH_COMBAT);
                             firstcast = false;
                         }
-                        DoCast(183956);
+                        DoCast(SPELL_SUM_FELBLZ_INFERNAL);
                         events.ScheduleEvent(EVENT_2, 13000);
                         break;
                     case EVENT_3:
-                        DoCast(185271);
+                        DoCast(CONV_ARGANOTH_25PCT);
                         break;
                 }
             }
@@ -1005,13 +1009,13 @@ public:
     {
         npc_bi_felcommander_azgalorAI(Creature* creature) : ScriptedAI(creature)
         {
-            below_1 = false;
+            below_3 = false;
             checkconv = false;
         }
 
         EventMap events;
-        bool below_1;
-        bool checkconv;
+        bool below_3;   // Trigger death conversation when below 1% health
+        bool checkconv; // Checks if we've already had the mid-combat conversation
 
         void Reset() override
         {
@@ -1035,14 +1039,14 @@ public:
         void DoAction(int32 const action) override
         {
             me->GetMotionMaster()->MovePoint(1, 667.1615f, 1929.12f, 5.4915f);
-            DoCast(224906);
+            DoCast(CONV_AZGALOR_LANDS);
         }
 
         void EnterCombat(Unit* who) override
         {
-            DoCast(224910);
-            events.ScheduleEvent(EVENT_1, 7000); // 224907
-            events.ScheduleEvent(EVENT_2, 23000); // 224908
+            DoCast(CONV_AZGALOR_25PCT);
+            events.ScheduleEvent(EVENT_1, 7000); // 224907 - Fel Crack
+            events.ScheduleEvent(EVENT_2, 23000); // 224908 - Fel Meteor Swarm
         }
 
         void MovementInform(uint32 moveType, uint32 pointId) override
@@ -1057,10 +1061,10 @@ public:
 
         void DamageTaken(Unit* attacker, uint32& damage, DamageEffectType dmgType) override
         {
-            if (!below_1 && me->HealthBelowPctDamaged(3, damage))
+            if (!below_3 && me->HealthBelowPctDamaged(3, damage))
             {
-                me->CastSpell(me, 224911, true);
-                below_1 = true;
+                me->CastSpell(me, CONV_AZGALOR_DEATH, true);
+                below_3 = true;
                 damage = 0;
                 // me->Kill(me);
             }
@@ -1081,16 +1085,17 @@ public:
                 switch (eventId)
                 {
                     case EVENT_1:
-                        DoCast(224907);
-                        events.ScheduleEvent(EVENT_1, 7000); // 224907
+                        DoCast(SPELL_FEL_CRACK_AZ);
+                        events.ScheduleEvent(EVENT_1, 7000); // 224907 - Fel Crack
                         break;
 
                     case EVENT_2:
                         DoCast(224908);
-                        events.ScheduleEvent(EVENT_2, 23000); // 224908 + пњљпњљпњљпњљ
+                        events.ScheduleEvent(EVENT_2, 23000); // 224908 - Fel Meteor Swarm
+                        // If we haven't had the first mid-combat conversation yet, do it now
                         if (!checkconv)
                         {
-                            DoCast(224909);
+                            DoCast(CONV_AZGALOR_COMBAT);
                             checkconv = true;
                         }
                         break;
@@ -1149,15 +1154,11 @@ public:
     sceneTrigger_part7() : SceneTriggerScript("sceneTrigger_part7")
     {}
 
-    enum data
-    {
-        __spell = 181546,
-    };
     bool OnTrigger(Player* player, SpellScene const* trigger, std::string type) override
     {
         if (type == "port")
         {
-            player->CastSpell(player, __spell, false);
+            player->CastSpell(player, SPELL_STAGE3_PORT, false);
         }
         return true;
     }
@@ -1173,8 +1174,10 @@ struct scenarion_bi_heroesl_baseAI : ScriptedAI
     FormationInfo* group{};
     std::vector<uint32> npcForSearch{};
 
+    // Create guard formations for faction leaders
     void GetNPCAroundAndDoAction(std::function<void(Creature*)> && function, uint8 groupai = 0)
     {
+
         if (!group)
         {
             group = sFormationMgr->CreateCustomFormation(me);
@@ -1202,24 +1205,25 @@ struct scenarion_bi_heroesl_baseAI : ScriptedAI
                 return true;
             });
 
-            std::vector<uint32> specailNps{};
+            // Faction leaders who protect each other after linking up
+            std::vector<uint32> specialNpcs{};
             switch (me->GetEntry())
             {
             case NPC_VARIAN:
-                specailNps.push_back(90717);
+                specialNpcs.push_back(NPC_GENN);
                 // no break
-            case 90717:
-                specailNps.push_back(NPC_JAINA);
+            case NPC_GENN:
+                specialNpcs.push_back(NPC_JAINA);
                 break;
-            case NPC_SYLVANA:
-                specailNps.push_back(90708);
+            case NPC_SYLVANAS:
+                specialNpcs.push_back(NPC_VOLJIN);
                 // no break;
-            case 90708:
-                specailNps.push_back(90711);
+            case NPC_VOLJIN:
+                specialNpcs.push_back(NPC_THRALL);
                 break;
             }
 
-            for (auto id : specailNps)
+            for (auto id : specialNpcs)
                 if (auto script = me->GetInstanceScript())
                     if (Creature* cre = script->instance->GetCreature(script->GetGuidData(id)))
                         guards.push_back(cre);
@@ -1266,6 +1270,7 @@ struct scenarion_bi_heroesl_baseAI : ScriptedAI
     }
 };
 
+// AI for Alliance heroes
 class scenarion_bi_heroes : public CreatureScript
 {
 public:
@@ -1280,10 +1285,12 @@ public:
     {
         scenarion_bi_heroeslAI(Creature* creature) : scenarion_bi_heroesl_baseAI(creature)
         {
-            if (me->GetEntry() == 90717 || me->GetEntry() == 90714)
+            if (me->GetEntry() == NPC_GENN|| me->GetEntry() == NPC_JAINA)
                 me->SetReactState(REACT_AGGRESSIVE);
 
-            npcForSearch = { 90713, 90714, 90716, 90717, 91353, 91949, 92074,/* 92122,*/ 92586, 93219, 97486, 97496, 101057 };
+            npcForSearch = { NPC_VARIAN, NPC_JAINA, NPC_GELBIN, NPC_GENN, NPC_KT_BATTLEMAGE_1, NPC_GNOME_TINKER, 
+                NPC_ALLIANCE_PRIEST,/* NPC_GNM_TINKER_2,*/ NPC_IF_CANNONEER, NPC_GIL_ROYGUARD_WOR, NPC_GIL_ROYGUARD_HU, 
+                NPC_KT_BATTLEMAGE_2, NPC_GIL_ROYALGUARD_3 };
         }
 
         bool introEvent = false;
@@ -1303,13 +1310,15 @@ public:
             switch (me->GetEntry())
             {
             case NPC_VARIAN:
-                if (moveType == WAYPOINT_MOTION_TYPE && currentWP == 439145 && pointId == 5)
+                // Not sure which waypoint this is, suspect it's his original position
+                if (moveType == WAYPOINT_MOTION_TYPE && currentWP == PATH_ALLIANCE_4 && pointId == 5)
                 {
                     currentWP = 0;
 
+                    // Talk to Gelbin if within 40 yards
                     me->AddDelayedEvent(3000, [this]() -> void
                     {
-                        if (Creature* targ = me->FindNearestCreature(90716, 40.0f, true))
+                        if (Creature* targ = me->FindNearestCreature(NPC_GELBIN, 40.0f, true))
                             targ->AI()->Talk(0);
 
                         me->SetHomePosition(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation());
@@ -1325,13 +1334,13 @@ public:
                             {
                                 cre->AddDelayedEvent(2000, [cre]() -> void
                                 {
-                                    cre->AI()->Talk(3);
-                                    cre->CastSpell(cre, 220571);
+                                    cre->AI()->Talk(3);         // Jaina about to summon ice bridge
+                                    cre->CastSpell(cre, SPELL_SUMMON_ICE);
 
                                     cre->AddDelayedEvent(6000, [cre]() -> void
                                     {
-                                        cre->RemoveAura(220571);
-                                        cre->SummonGameObject(242549, 1420.85f, 2107.47f, 21.659f, 1.8675f, 0.0f, 0.0f, 0.0f, 0.0f, DAY);
+                                        cre->RemoveAura(SPELL_SUMMON_ICE);
+                                        cre->SummonGameObject(GO_ICE_BRIDGE, 1420.85f, 2107.47f, 21.659f, 1.8675f, 0.0f, 0.0f, 0.0f, 0.0f, DAY);
                                     });
                                 });
                             }
@@ -1344,13 +1353,16 @@ public:
 
                         me->AddDelayedEvent(3000, [this]() -> void
                         {
-                            GetNPCAroundAndDoAction([](Creature* cre) {cre->GetMotionMaster()->Clear();  cre->GetMotionMaster()->MovePath(439146, false, irand(-1, 1), irand(-1, 1)); }, 3);
+                            GetNPCAroundAndDoAction([](Creature* cre) 
+                            {
+                                    cre->GetMotionMaster()->Clear();  cre->GetMotionMaster()->MovePath(PATH_ALLIANCE_5, false, irand(-1, 1), irand(-1, 1)); 
+                            }, 3);
                         });
-                        currentWP = 439146;
+                        currentWP = PATH_ALLIANCE_5;
                     });
                 }
 
-                if (moveType == WAYPOINT_MOTION_TYPE && currentWP == 439146 && pointId == 10)
+                if (moveType == WAYPOINT_MOTION_TYPE && currentWP == PATH_ALLIANCE_5 && pointId == 10)
                 {
                     currentWP = 0;
                     me->AddDelayedEvent(2000, [this]() -> void
@@ -1368,32 +1380,32 @@ public:
 
                     me->SetHomePosition(me->GetPosition());
 
-                    if (script->getScenarionStep() != SCENARION_STEP_9)
+                    if (script->getScenarionStep() != SCENARIO_STEP_9)
                         return;
 
                     Map *m = script->instance;
                     if (!m)
                         return;
 
-                    Creature* gualdan = m->GetCreature(script->GetGuidData(NPC_GULDAN));
-                    if (!gualdan)
+                    Creature* guldan = m->GetCreature(script->GetGuidData(NPC_GULDAN));
+                    if (!guldan)
                         return;
 
-                    gualdan->NearTeleportTo(1660.127f, 1655.793f, 79.36142f, 2.33f);
+                    guldan->NearTeleportTo(1660.127f, 1655.793f, 79.36142f, 2.33f);
                     //sCreatureTextMgr->SendChat(me, TEXT_GENERIC_5);
-                    gualdan->AI()->SetData(SCENARION_STEP_9, 1);
-                    gualdan->SetFacingTo(me);
+                    guldan->AI()->SetData(SCENARIO_STEP_9, 1);
+                    guldan->SetFacingTo(me);
                     me->SetReactState(REACT_AGGRESSIVE);
                     me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
                 }
                 break;
-            case 90717:
+            case NPC_GENN:
                 if (moveType != WAYPOINT_MOTION_TYPE || currentWP == 0)
                     return;
 
                 switch (currentWP)
                 {
-                case 439136:
+                case PATH_ALLIANCE_1:
                     if (pointId == 13)
                     {
                         Map::PlayerList const &PlList = me->GetMap()->GetPlayers();
@@ -1402,16 +1414,16 @@ public:
                             {
                                 if (player->GetTeam() == ALLIANCE)
                                 {
-                                    player->CastSpell(player, 218626);
+                                    player->CastSpell(player, SPELL_STAGE2_SCENE_A);
                                     player->TeleportTo(1460, 812.54f, 2166.87f, 85.84f, 0.4f);
                                 }
                             }
 
                         me->AddDelayedEvent(22000, [this]() -> void
                         {
-                            DoCast(199718);
-                            me->GetMotionMaster()->MovePath(439137, false);
-                            currentWP = 439137;
+                            DoCast(CONV_MOVE_TO_VARIAN); 
+                            me->GetMotionMaster()->MovePath(PATH_ALLIANCE_2, false);
+                            currentWP = PATH_ALLIANCE_2;
                         });
                     }
                     break;
@@ -1431,7 +1443,7 @@ public:
             if (introEvent)
                 return;
 
-            if (me->GetEntry() == 90717) // genn
+            if (me->GetEntry() == NPC_GENN) // genn
             {
                 if (who->GetTypeId() != TYPEID_PLAYER || !me->IsWithinDistInMap(who, 20.0f))
                     return;
@@ -1443,15 +1455,15 @@ public:
                     if (auto commander = script->instance->GetCreature(script->GetGuidData(90705)))
                         commander->AI()->DoAction(true);
 
+                // Events that start right after getting off the boat
                 me->AddDelayedEvent(8000, [this] () -> void
                 {
                     std::list<Creature*> targets;
                     me->GetCreatureListInGrid(targets, 150.0f);
                     targets.remove_if([this](Creature* target) -> bool
                     {
-                        if (target && target->GetEntry() == 110618)
+                        if (target && target->GetEntry() == NPC_ANCHOR_CRYSTAL_A)
                             return false;
-
 
                         return !target || !target->isAlive() || target->isTrigger() || !target->IsVisible() || me->IsFriendlyTo(target) || target->getFaction() == 1819 || target->GetEntry() == 90705;
                     });
@@ -1470,19 +1482,21 @@ public:
 
                     me->SetReactState(REACT_AGGRESSIVE);
 
+                    // Probably the 'Just in time' dialogue
                     Talk(1);
 
                     for (auto& plr : me->GetMap()->GetPlayers())
-                        me->CastSpell(plr.getSource(), 185265, true);
+                        me->CastSpell(plr.getSource(), SPELL_FOR_THE_ALLIANCE, true);
 
-                    DoCast(199256);
+                    // Worgen transformation + attack, need to have a pause before this so Genn can finish speaking
+                    DoCast(SPELL_WORGEN_TRNSFRM);
                     me->GetMotionMaster()->MovePoint(1, 538.84f, 2107.58f, 3.0f);
                     me->SetHomePosition({ 538.84f, 2107.58f, 3.0f });
 
 
                     me->AddDelayedEvent(11000, [this] () -> void
                     {
-                        DoCast(183988);
+                        DoCast(CONV_S1_CRYSTAL_HINT_A);
                         GetNPCAroundAndDoAction([](Creature*){}, 3);
                     });
 
@@ -1497,16 +1511,17 @@ public:
                 if (!p)
                     return;
 
+                // Arriving at the portal
                 if (InstanceScript *script = me->GetInstanceScript())
                     if (script->getScenarionStep() == 3)
                         if (auto script = me->GetInstanceScript())
-                            if (Creature* cre = script->instance->GetCreature(script->GetGuidData(90714)))
+                            if (Creature* cre = script->instance->GetCreature(script->GetGuidData(NPC_JAINA)))
                                 if (me->GetDistance(cre) <= 30.0f)
                                 {
                                     introEvent = true;
 
                                     script->DoUpdateAchievementCriteria(CRITERIA_TYPE_SCRIPT_EVENT_2, 45228);
-                                    DoCast(199399);
+                                    DoCast(CONV_PORTAL_ARRIVE_A);
 
                                     GetNPCAroundAndDoAction([](Creature* creature) -> void
                                     {
@@ -1517,16 +1532,16 @@ public:
                                 }
             }
         };
-
+       
         void DoAction(int32 const action) override
         {
-            if (me->GetEntry() == 90717 && action == 3)
+            if (me->GetEntry() == NPC_GENN && action == 3)
             {
                 GetNPCAroundAndDoAction([](Creature* creature) { creature->SetReactState(REACT_PASSIVE); }, 5);
                 
                 me->GetMotionMaster()->Clear();
-                me->GetMotionMaster()->MovePath(439136, false);
-                currentWP = 439136;
+                me->GetMotionMaster()->MovePath(PATH_ALLIANCE_1, false);
+                currentWP = PATH_ALLIANCE_1;
                 me->SetHomePosition(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation());
             }
 
@@ -1551,7 +1566,7 @@ public:
                         creature->SetReactState(alliance ? REACT_AGGRESSIVE : REACT_PASSIVE);
                     }, 5);
                     me->GetMotionMaster()->Clear();
-                    me->GetMotionMaster()->MovePath(439144, false); //4 9 14 21
+                    me->GetMotionMaster()->MovePath(PATH_ALLIANCE_3, false); //4 9 14 21
                     me->SetHomePosition(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation());
                     me->ClearUnitState(UNIT_STATE_EVADE);
                     if (alliance)
@@ -1570,8 +1585,8 @@ public:
                     });
                     EnterEvadeMode();
                     me->SetReactState(REACT_PASSIVE);
-                    me->GetMotionMaster()->MovePath(439145, false);
-                    currentWP = 439145;
+                    me->GetMotionMaster()->MovePath(PATH_ALLIANCE_4, false);
+                    currentWP = PATH_ALLIANCE_4;
                     me->SetHomePosition(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation());
                     break;
                 case 7:
@@ -1592,9 +1607,9 @@ public:
 
                     me->AddDelayedEvent(5000, [this]() -> void
                     {
-                        me->SummonGameObject(242549, 1536.26f, 1776.97f, 37.263f, 2.03f, 0.0f, 0.0f, 0.0f, 0.0f, DAY);
+                        me->SummonGameObject(GO_ICE_BRIDGE, 1536.26f, 1776.97f, 37.263f, 2.03f, 0.0f, 0.0f, 0.0f, 0.0f, DAY);
 
-                        me->GetMotionMaster()->MovePath(439141, false); // 3
+                        me->GetMotionMaster()->MovePath(PATH_ALLIANCE_6, false); // 3
                         me->SetHomePosition(1612.035f, 1706.058f, 77.55668f, me->GetOrientation());
                     });
                     break;
@@ -1607,18 +1622,19 @@ public:
             damage = 0;
         }
 
+        // Genn and Jaina combined combat AI
         void EnterCombat(Unit* who) override
         {
             switch (me->GetEntry())
             {
-                case 90717:
-                    events.ScheduleEvent(EVENT_1, 11000); //200397
-                    events.ScheduleEvent(EVENT_3, 5000); //222584
-                    DoCast(199256);
+                case NPC_GENN:
+                    events.ScheduleEvent(EVENT_1, 11000); //200397, Swipe
+                    events.ScheduleEvent(EVENT_3, 5000); //222584, Threat 5000%
+                    DoCast(SPELL_WORGEN_TRNSFRM);
                     break;
-                case 90714:
-                    events.ScheduleEvent(EVENT_2, 3000); // 199509
-                    events.ScheduleEvent(EVENT_3, 5000); //222584
+                case NPC_JAINA:
+                    events.ScheduleEvent(EVENT_2, 3000); // SPELL_GLACIAL_SPIKE, Glacial Spike
+                    events.ScheduleEvent(EVENT_3, 5000); //222584, Threat 5000%
                     break;
             }
         }
@@ -1634,20 +1650,20 @@ public:
 
                 if (me->GetEntry() == NPC_VARIAN)
                     if (me->GetInstanceScript()->getScenarionStep() == 4)
-                        if (auto target = me->FindNearestCreature(90525, 120.0f, true))
+                        if (auto target = me->FindNearestCreature(NPC_EREDAR_CHAOS_GUARD, 120.0f, true))
                         {
                             me->ClearUnitState(UNIT_STATE_EVADE);
                             AttackStart(target);
                         }
             });
 
-            if (me->GetEntry() != 90717)
+            if (me->GetEntry() != NPC_GENN)
                 return;
 
             targetList.remove_if([this](ObjectGuid targetGuid) -> bool
             {
                 Creature* target = ObjectAccessor::GetCreature(*me, targetGuid);
-                if (target && target->GetEntry() == 110618)
+                if (target && target->GetEntry() == NPC_ANCHOR_CRYSTAL_A)
                     return false;
 
                 return !target || !target->isAlive() || target->isTrigger() || !target->IsVisible();
@@ -1666,7 +1682,7 @@ public:
 
                 if (targetList.empty())
                 {
-                    if (auto target = me->FindNearestCreature(110618, 80.0f, true))
+                    if (auto target = me->FindNearestCreature(NPC_ANCHOR_CRYSTAL_A, 80.0f, true))
                         AttackStart(target);
                     return;
                 }
@@ -1693,15 +1709,15 @@ public:
                 switch (eventId)
                 {
                     case EVENT_1:
-                        DoCast(200397);
+                        DoCast(SPELL_SWIPE);
                         events.ScheduleEvent(EVENT_1, 11000);
                         break;
                     case EVENT_2:
-                        DoCast(199509);
+                        DoCast(SPELL_GLACIAL_SPIKE);
                         events.ScheduleEvent(EVENT_2, 3000);
                         break;
                     case EVENT_3:
-                        DoCast(222584);
+                        DoCast(SPELL_THREAT_5000);
                         events.ScheduleEvent(EVENT_3, 5000);
                         break;
                 }
@@ -1746,33 +1762,33 @@ public:
         {
             switch (me->GetEntry())
             {
-            case 90716:
-            case 92122:
-            case 91949:
+            case NPC_GELBIN:
+            case NPC_GNM_TINKER_2:
+            case NPC_GNOME_TINKER:
                 events.ScheduleEvent(EVENT_1, 2000);
                 break;
-            case 97486:
-            case 93219:
-            case 101057:
-            case 101056:
+            case NPC_GIL_ROYGUARD_HU:
+            case NPC_GIL_ROYGUARD_WOR:
+            case NPC_GIL_ROYALGUARD_3:
+            case NPC_GIL_ROYAL_GUARD_4:
                 events.ScheduleEvent(EVENT_2, 500);
                 events.ScheduleEvent(EVENT_3, 1500);
                 break;
-            case 91353:
-            case 97496:
+            case NPC_KT_BATTLEMAGE_1:
+            case NPC_KT_BATTLEMAGE_2:
                 events.ScheduleEvent(EVENT_4, 1000);
                 events.ScheduleEvent(EVENT_5, 6000);
                 break;
 
                 //
-            case 90708:
+            case NPC_VOLJIN:
                 events.ScheduleEvent(EVENT_6, 2000);
                 events.ScheduleEvent(EVENT_7, 3000);
                 break;
-            case 90710:
+            case NPC_BAINE:
                 events.ScheduleEvent(EVENT_8, 2000);
                 break;
-            case 90712:
+            case NPC_ER_SHAMAN:
                 events.ScheduleEvent(EVENT_9, 4000);
                 events.ScheduleEvent(EVENT_10, 14000);
                 break;
@@ -1792,7 +1808,7 @@ public:
 
                 if (auto script = me->GetInstanceScript())
                     if (script->getScenarionStep() <= 1)
-                        if (auto target = me->FindNearestCreature(110618, 80.0f, true))
+                        if (auto target = me->FindNearestCreature(NPC_ANCHOR_CRYSTAL_H, 80.0f, true))
                         {
                             AttackStart(target);
                             return;
@@ -1839,55 +1855,55 @@ public:
                 switch (eventId)
                 {
                 case EVENT_1:
-                    DoCast(183621);
+                    DoCast(SPELL_ZAPMASTER_9K);
                     events.ScheduleEvent(EVENT_1, urand(2000, 3000));
                     return;
                 case EVENT_2:
                     if (auto target = SelectTarget(SelectAggroTarget::SELECT_TARGET_RANDOM, 0))
-                        DoCast(target, 200396);
+                        DoCast(target, SPELL_LEAPING_RUSH);
                     events.ScheduleEvent(EVENT_2, urand(10000, 20000));
                     return;
                 case EVENT_3:
-                    DoCast(200397);
+                    DoCast(SPELL_SWIPE);
                     events.ScheduleEvent(EVENT_3, urand(5000, 8000));
                     return;
                 case EVENT_4:
-                    DoCast(191293);
+                    DoCast(SPELL_ARCANE_MISSLES);
                     events.ScheduleEvent(EVENT_4, 8000);
                     return;
                 case EVENT_5:
-                    DoCast(199219);
+                    DoCast(SPELL_FROSTFIRE_BOLT);
                     events.ScheduleEvent(EVENT_5, 8000);
                     return;
                 case EVENT_6:
-                    DoCast(178532);
+                    DoCast(SPELL_CLEAVE);
                     events.ScheduleEvent(EVENT_6, 2000);
                     break;
                 case EVENT_7:
-                    DoCast(140592);
+                    DoCast(SPELL_SHOOT);
                     events.ScheduleEvent(EVENT_7, 4000);
                     break;
                 case EVENT_8:
-                    DoCast(84622);
+                    DoCast(SPELL_THUNDERCLAP);
                     events.ScheduleEvent(EVENT_7, 9000);
                     break;
                 case EVENT_9:
-                    DoCast(224721);
+                    DoCast(SPELL_LTNG_BOLT);
                     events.ScheduleEvent(EVENT_9, urand(3000, 4000));
                     break;
                 case EVENT_10:
-                    DoCast(224722);
+                    DoCast(SPELL_LAVA_BURST);
                     events.ScheduleEvent(EVENT_10, urand(14000, 15000));
                     break;
                 }
             }
 
-            if (me->GetEntry() == 92586)
-                DoSpellAttackIfReady(185857);
-            else if(me->GetEntry() == 92074)
-                DoSpellAttackIfReady(227542);
-            else if (me->GetEntry() == 112920 || me->GetEntry() == 112921)
-                DoSpellAttackIfReady(224953);
+            if (me->GetEntry() == NPC_IF_CANNONEER)
+                DoSpellAttackIfReady(SPELL_SHOOT_IC);
+            else if(me->GetEntry() == NPC_ALLIANCE_PRIEST)
+                DoSpellAttackIfReady(SPELL_SMITE);
+            else if (me->GetEntry() == NPC_DARK_RANGER || me->GetEntry() == NPC_BW_BLASTMASTER)
+                DoSpellAttackIfReady(SPELL_SHOOT_DR);
             else
                 DoMeleeAttackIfReady();
         }
@@ -1925,8 +1941,11 @@ public:
         EventMap events;
         bool movePointer;
 
-        std::vector<uint32> const alliances{ 90713, 90714, 90716, 90717, 91353, 91949, 92074,/* 92122,*/ 92586, 93219, 97486, 97496, 101057 };
-        std::vector<uint32> const hordes{ 90708, 90709, 90710, 90711, 90712, 93704, 97525, 112920, 112921 };
+        std::vector<uint32> const alliances{ NPC_VARIAN, NPC_JAINA, NPC_GELBIN, NPC_GENN, NPC_KT_BATTLEMAGE_1, 
+            NPC_GNOME_TINKER, NPC_ALLIANCE_PRIEST,/* NPC_GNM_TINKER_2,*/ NPC_IF_CANNONEER, NPC_GIL_ROYGUARD_WOR, 
+            NPC_GIL_ROYGUARD_HU, NPC_KT_BATTLEMAGE_2, NPC_GIL_ROYALGUARD_3 };
+        std::vector<uint32> const hordes{ NPC_VOLJIN, NPC_SYLVANAS, NPC_BAINE, NPC_THRALL, NPC_ER_SHAMAN, 
+            NPC_DS_HEADHUNTER, NPC_TB_BRAVE, NPC_DARK_RANGER, NPC_BW_BLASTMASTER };
 
         void Reset() override
         {
@@ -1942,7 +1961,7 @@ public:
         void EnterCombat(Unit* victim) override
         {
             sCreatureTextMgr->SendChat(me, TEXT_GENERIC_0);
-            DoCast(225099);
+            DoCast(SPELL_AGGRO_AREA_A);
             events.ScheduleEvent(EVENT_4, 14000);
             events.ScheduleEvent(EVENT_5, 27000);
             events.ScheduleEvent(EVENT_6, urand(20000, 29000));
@@ -1969,9 +1988,9 @@ public:
             if (!below_75 && me->HealthBelowPct(75))
             {
                 below_75 = true;
-                attacker->CastSpell(attacker, 225069, true); //conv 3581
+                attacker->CastSpell(attacker, CONV_KROSUS_75PCT, true); //conv 3581
                 moveByWPWithSetHome(movePointer = !movePointer);
-                DoCast(225098);
+                DoCast(SPELL_AGGRO_AREA_H);
                 InCombatAlliance(false);
                 events.RescheduleEvent(EVENT_7, 4000);
                 events.RescheduleEvent(EVENT_8, 6000);
@@ -1980,9 +1999,9 @@ public:
             if (!below_50 && me->HealthBelowPct(50))
             {
                 below_50 = true;
-                attacker->CastSpell(attacker, 225070, true); //conv 3582
+                attacker->CastSpell(attacker, CONV_KROSUS_50PCT, true); //conv 3582
                 moveByWPWithSetHome(movePointer = !movePointer);
-                DoCast(225099);
+                DoCast(SPELL_AGGRO_AREA_A);
                 events.RescheduleEvent(EVENT_7, 4000);
                 events.RescheduleEvent(EVENT_9, 6000);
             }
@@ -1990,9 +2009,9 @@ public:
             if (!below_25 && me->HealthBelowPct(25))
             {
                 below_25 = true;
-                attacker->CastSpell(attacker, 225071, true); //conv 3583
+                attacker->CastSpell(attacker, CONV_KROSUS_25PCT, true); //conv 3583
                 moveByWPWithSetHome(movePointer = !movePointer);
-                DoCast(225098);
+                DoCast(SPELL_AGGRO_AREA_H);
                 InCombatAlliance(false);
                 events.RescheduleEvent(EVENT_7, 4000);
                 events.RescheduleEvent(EVENT_8, 6000);
@@ -2012,7 +2031,7 @@ public:
                     });
                 /*me->SetAnimKitId(0);
                 me->PlayOneShotAnimKit(0);*/
-                //me->CastSpell(me, 225099, true);
+                //me->CastSpell(me, SPELL_AGGRO_AREA_A, true);
 
                 //me->SetControlled(true, UNIT_STATE_STUNNED);
                 //me->SetHover(true);
@@ -2025,7 +2044,7 @@ public:
         {
             intro = true;
 
-            me->CastSpell(me, 208495, true);
+            me->CastSpell(me, SPELL_KROSUS_EMERGE, true);
 
             events.RescheduleEvent(EVENT_2, 2000);
             events.RescheduleEvent(EVENT_3, 6000);
@@ -2048,7 +2067,7 @@ public:
         {
             sCreatureTextMgr->SendChat(me, TEXT_GENERIC_2);
 
-            attacker->CastSpell(attacker, 225106, true); //conv 3583
+            attacker->CastSpell(attacker, CONV_KROSUS_DEATH, true); //conv 3583
 
             if (auto script = me->GetInstanceScript())
                 script->DoUpdateAchievementCriteria(CRITERIA_TYPE_SCRIPT_EVENT_2, 44669);
@@ -2081,33 +2100,33 @@ public:
                         //me->SetMovementAnimKitId(11668);
                         if (Creature* guld = me->FindNearestCreature(NPC_GULDAN, 80.0f, true))
                             guld->AI()->Talk(0);
-                        if (Creature* tirion = me->FindNearestCreature(91951, 80.0f, true))
+                        if (Creature* tirion = me->FindNearestCreature(NPC_TIRION, 80.0f, true))
                         {
-                            me->CastSpell(tirion, 184464);
-                            tirion->CastSpell(tirion, 208504);
+                            me->CastSpell(tirion, SPELL_BAD_BREATH);
+                            tirion->CastSpell(tirion, SPELL_BAD_BREATH_APPLIER);
                         }
                         break;
                     case EVENT_3:
-                        me->RemoveAura(184464);
-                        if (Creature* tirion = me->FindNearestCreature(91951, 80.0f, true))
+                        me->RemoveAura(SPELL_BAD_BREATH);
+                        if (Creature* tirion = me->FindNearestCreature(NPC_TIRION, 80.0f, true))
                         {
-                            tirion->RemoveAura(208504);
+                            tirion->RemoveAura(SPELL_BAD_BREATH_APPLIER);
                             tirion->AI()->Talk(0);
-                            tirion->CastSpell(tirion, 208505);
+                            tirion->CastSpell(tirion, SPELL_BAD_BREATH_2);
                             tirion->GetMotionMaster()->MovePoint(0, 1494.33f, 1752.15f, 9.25f);
                         }
                         events.ScheduleEvent(EVENT_1, 10000);
                         break;
                     case EVENT_4:
-                        DoCast(183393);
+                        DoCast(SPELL_SLAM);
                         events.ScheduleEvent(EVENT_4, 14000);
                         break;
                     case EVENT_5:
-                        DoCast(221080);
+                        DoCast(SPELL_FEL_STORM);
                         events.ScheduleEvent(EVENT_5, 14000);
                         break;
                     case EVENT_6:
-                        DoCast(me->getVictim(), 183498);
+                        DoCast(me->getVictim(), SPELL_ORB_OF_DESTRUCTION);
                         events.ScheduleEvent(EVENT_6, urand(20000, 29000));
                         break;
                     case EVENT_7:
@@ -2128,7 +2147,7 @@ public:
         void InCombatAlliance(bool attack)
         {
             if (auto script = me->GetInstanceScript())
-                if (Creature* target = script->instance->GetCreature(script->GetGuidData(attack ? NPC_VARIAN : NPC_SYLVANA)))
+                if (Creature* target = script->instance->GetCreature(script->GetGuidData(attack ? NPC_VARIAN : NPC_SYLVANAS)))
                     AttackStart(target);
 
             std::list<Creature*> guards;
@@ -2239,7 +2258,7 @@ public:
                     if (!tirion)
                         return;
 
-                    me->CastSpell(tirion, 186589, true);
+                    me->CastSpell(tirion, SPELL_FEL_CHAINS, true);
                 }
             }
         }
@@ -2288,33 +2307,33 @@ public:
                     else
                         me->SummonCreature(NPC_VARIAN, 1482.425f, 1813.54f, 38.26539f, 0.0f);
 
-                    me->SummonCreature(NPC_SYLVANA, 1427.27f, 1776.18f, 34.23f, 0.0f);
-                    me->SummonCreature(90711, 1427.27f, 1776.18f, 34.23f, 0.0f);
+                    me->SummonCreature(NPC_SYLVANAS, 1427.27f, 1776.18f, 34.23f, 0.0f);
+                    me->SummonCreature(NPC_THRALL, 1427.27f, 1776.18f, 34.23f, 0.0f);
 
                     for (uint8 i = 0; i < 4; ++i)
-                        me->SummonCreature(97525, 1427.27f + frand(-5.0f, 5.0f), 1776.18f + frand(-5.0f, 5.0f), 34.23f, 0.0f);
+                        me->SummonCreature(NPC_TB_BRAVE, 1427.27f + frand(-5.0f, 5.0f), 1776.18f + frand(-5.0f, 5.0f), 34.23f, 0.0f);
                     
                     for (uint8 i = 0; i < 4; ++i)
-                        me->SummonCreature(112920, 1427.27f + frand(-5.0f, 5.0f), 1776.18f + frand(-5.0f, 5.0f), 34.23f, 0.0f);
+                        me->SummonCreature(NPC_DARK_RANGER, 1427.27f + frand(-5.0f, 5.0f), 1776.18f + frand(-5.0f, 5.0f), 34.23f, 0.0f);
                 }
                 else
                 {
-                    if (Creature* sylvana = m->GetCreature(script->GetGuidData(NPC_SYLVANA)))
+                    if (Creature* sylvana = m->GetCreature(script->GetGuidData(NPC_SYLVANAS)))
                     {
                         if (me->GetDistance2d(sylvana) >= 140.0f)
                             return;
                     }
                     else
-                        me->SummonCreature(NPC_SYLVANA, 1427.27f, 1776.18f, 34.23f, 0.0f);
+                        me->SummonCreature(NPC_SYLVANAS, 1427.27f, 1776.18f, 34.23f, 0.0f);
 
                     me->SummonCreature(NPC_JAINA, 1502.416f, 1816.275f, 37.43131f, 0.0f);
                     me->SummonCreature(NPC_VARIAN, 1482.425f, 1813.54f, 38.26539f, 0.0f);
 
                     for (uint8 i = 0; i < 4; ++i)
-                        me->SummonCreature(97486, 1482.425f + frand(-5.0f, 5.0f), 1813.54f + frand(-5.0f, 5.0f), 38.26539f);
+                        me->SummonCreature(NPC_GIL_ROYGUARD_HU, 1482.425f + frand(-5.0f, 5.0f), 1813.54f + frand(-5.0f, 5.0f), 38.26539f);
 
                     for (uint8 i = 0; i < 5; ++i)
-                        me->SummonCreature(91353, 1482.425f + frand(-5.0f, 5.0f), 1813.54f + frand(-5.0f, 5.0f), 38.26539f);
+                        me->SummonCreature(NPC_KT_BATTLEMAGE_1, 1482.425f + frand(-5.0f, 5.0f), 1813.54f + frand(-5.0f, 5.0f), 38.26539f);
 
                 }
 
@@ -2324,7 +2343,7 @@ public:
 
                 if (Creature* tirion = m->GetCreature(script->GetGuidData(NPC_TIRION)))
                 {
-                    me->CastSpell(tirion, 186589, true);
+                    me->CastSpell(tirion, SPELL_FEL_CHAINS, true);
                 }
 
                 events.RescheduleEvent(EVENT_1, 100);
@@ -2349,7 +2368,7 @@ public:
         //ServerToClient: SMSG_CHAT (0x2BAD) Length: 256 ConnIdx: 0 Time: 06/05/2016 08:38:02.064 Number: 260361
         void SetData(uint32 data, uint32 step) override
         {
-            if (data != SCENARION_STEP_9)
+            if (data != SCENARIO_STEP_9)
                 return;
             switch (step)
             {
@@ -2393,7 +2412,7 @@ public:
                 switch (eventId)
                 {
                     case EVENT_1:
-                        me->CastSpell(me, 208490, true); //06/05/2016 08:29:17.520 Number: 161804
+                        me->CastSpell(me, CONV_STAGE_4_INTRO, true); //06/05/2016 08:29:17.520 Number: 161804
                         break;
                     case EVENT_SPECIAL:
                     {
@@ -2410,7 +2429,7 @@ public:
                     }
                     break;
                     case EVENT_2:
-                        me->CastSpell(me, 208512, true); //06/05/2016 08:30:02.613 Number: 162604
+                        me->CastSpell(me, CONV_STAGE_4_KROSUS, true); //06/05/2016 08:30:02.613 Number: 162604
                         break;
                     case EVENT_3:
                     {
@@ -2426,7 +2445,7 @@ public:
                         if (!script)
                             return;
 
-                        //script->SetData(SCENARION_STEP_9, 0);
+                        //script->SetData(SCENARIO_STEP_9, 0);
 
                         Map *m = script->instance;
                         if (!m)
@@ -2445,14 +2464,14 @@ public:
                         if (!script)
                             return;
 
-                        script->SetData(SCENARION_STEP_9, 0);
+                        script->SetData(SCENARIO_STEP_9, 0);
 
                         Map *m = script->instance;
                         if (!m)
                             return;
 
                         if (script->GetData(DATA_SCENARIO_TEAM) != ALLIANCE)
-                            if (Creature* sylvana = m->GetCreature(script->GetGuidData(NPC_SYLVANA)))
+                            if (Creature* sylvana = m->GetCreature(script->GetGuidData(NPC_SYLVANAS)))
                                 sylvana->AI()->DoAction(1);
 
                         if (Creature* var = m->GetCreature(script->GetGuidData(NPC_VARIAN)))
@@ -2465,8 +2484,8 @@ public:
                         if (!script)
                             return;
 
-                        script->SetData(SCENARION_STEP_9, 2);
-                        script->SetData(SCENARION_STEP_9, 3);
+                        script->SetData(SCENARIO_STEP_9, 2);
+                        script->SetData(SCENARIO_STEP_9, 3);
 
                         Map *m = script->instance;
                         if (!m)
@@ -2475,7 +2494,7 @@ public:
                         if (Creature* var = m->GetCreature(script->GetGuidData(NPC_VARIAN)))
                             sCreatureTextMgr->SendChat(var, TEXT_GENERIC_7);
 
-                        script->SetData(SCENARION_STEP_9, 4);
+                        script->SetData(SCENARIO_STEP_9, 4);
                         break;
                     }
                     case EVENT_8:
@@ -2483,7 +2502,7 @@ public:
                         InstanceScript *script = me->GetInstanceScript();
                         if (!script)
                             return;
-                        script->SetData(SCENARION_STEP_9, 5);
+                        script->SetData(SCENARIO_STEP_9, 5);
                         break;
                     }
                     case EVENT_9:
@@ -2491,7 +2510,7 @@ public:
                         InstanceScript *script = me->GetInstanceScript();
                         if (!script)
                             return;
-                        script->SetData(SCENARION_STEP_9, 6);
+                        script->SetData(SCENARIO_STEP_9, 6);
                         break;
                     }
                     case EVENT_10:
@@ -2601,7 +2620,7 @@ public:
             if (!apply || who->GetTypeId() != TYPEID_PLAYER)
                 return;
 
-            who->ToPlayer()->KilledMonsterCredit(100696);
+            who->ToPlayer()->KilledMonsterCredit(100696); // Gilnean Gryphon?
 
             PlayerOn = true;
             Start(false, true, who->GetGUID());
@@ -2649,7 +2668,7 @@ public:
 
         player->PlayerTalkClass->SendCloseGossip();
         
-        Quest const* quest = sQuestDataStore->GetQuestTemplate(44663);
+        Quest const* quest = sQuestDataStore->GetQuestTemplate(44663); // Quest - In the Blink of an Eye
         if (!quest)
             return false;
 
@@ -2658,7 +2677,7 @@ public:
         ObjectGuid clickerGUID = player->GetGUID();
         creature->AddDelayedEvent(1500, [creature, clickerGUID] {
             if (auto unit = ObjectAccessor::GetUnit(*creature, clickerGUID))
-                unit->CastSpell(unit, 230156);
+                unit->CastSpell(unit, 230156); // Portal to Dalaran
         });
 
         return true;
@@ -2718,7 +2737,7 @@ public:
     {
         //100616 / quest - invisibility - detection - 27
         player->CastSpell(player, 100616, true);
-        player->CastSpell(player, 199046, true);
+        player->CastSpell(player, 199046, true); // Speak with Jace Credit
         //93216
         return true;
     }
@@ -2795,7 +2814,7 @@ public:
     bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) override
     {
         if (quest->GetQuestId() == 40517)
-            player->CastSpell(player, 197678);
+            player->CastSpell(player, 197678); // Genn Graymane Follow-Up Conversation
         return true;
     }
 
@@ -2875,7 +2894,7 @@ public:
                     if (itr != m_player_for_event.end())
                         return;
                     m_player_for_event.insert(who->GetGUID());
-                    who->CastSpell(who, 197944, true); // conv
+                    who->CastSpell(who, CONV_HORDE_LEADERS, true); // conv
                     who->AddDelayedEvent(45000, [who]() -> void
                     {
                         who->CastSpell(who, 200252, true); //delayed criteria
@@ -2950,6 +2969,7 @@ public:
     };
 };
 
+// AI for Horde heroes
 class scenarion_bi_heroes_horde : public CreatureScript
 {
 public:
@@ -2963,7 +2983,8 @@ public:
     {
         scenarion_bi_heroes_hordeAI(Creature* creature) : scenarion_bi_heroesl_baseAI(creature)
         {
-            npcForSearch = { 90708, 90709, 90710, 90711, 90712, 93704, 97525, 112920, 112921 };
+            npcForSearch = { NPC_VOLJIN, NPC_SYLVANAS, NPC_BAINE, NPC_THRALL, NPC_ER_SHAMAN, NPC_DS_HEADHUNTER, 
+                NPC_TB_BRAVE, NPC_DARK_RANGER, NPC_BW_BLASTMASTER };
         }
 
         EventMap events;
@@ -2983,16 +3004,16 @@ public:
         {
             switch (me->GetEntry())
             {
-                case 90709:
-                    events.ScheduleEvent(EVENT_1, 2000); // 224782
+                case NPC_SYLVANAS:
+                    events.ScheduleEvent(EVENT_1, 2000); // 224782 - Dark Shot
                     break;
-                case 90711:
-                    events.ScheduleEvent(EVENT_2, 3000); // 224721
-                    events.ScheduleEvent(EVENT_3, 24000); // 199207
-                    events.ScheduleEvent(EVENT_4, 14000); // 167014
+                case NPC_THRALL:
+                    events.ScheduleEvent(EVENT_2, 3000); // SPELL_LTNG_BOLT - Lightning Bolt
+                    events.ScheduleEvent(EVENT_3, 24000); // 199207 - Command Earth
+                    events.ScheduleEvent(EVENT_4, 14000); // 167014 - Command Lightning
                     break;
-                case 90708:
-                    events.ScheduleEvent(EVENT_5, 13000); // 178532
+                case NPC_VOLJIN:
+                    events.ScheduleEvent(EVENT_5, 13000); // SPELL_CLEAVE - Cleave
                     break;
             }
         }
@@ -3001,21 +3022,22 @@ public:
         {
             CreatureAI::EnterEvadeMode();
 
-            if (me->GetEntry() == NPC_SYLVANA)
+            if (me->GetEntry() == NPC_SYLVANAS)
                 me->AddDelayedEvent(1500, [this]() -> void
                 {
                     if (me->isInCombat())
                         return;
 
+                    // Sylvanas continually engages Chaos Guards in step 4
                     if (me->GetInstanceScript()->getScenarionStep() == 4)
-                        if (auto target = me->FindNearestCreature(90525, 120.0f, true))
+                        if (auto target = me->FindNearestCreature(NPC_EREDAR_CHAOS_GUARD, 120.0f, true))
                         {
                             me->ClearUnitState(UNIT_STATE_EVADE);
                             AttackStart(target);
                         }
                 });
 
-            if (me->GetEntry() != 90708 && me->GetEntry() != 90711)
+            if (me->GetEntry() != NPC_VOLJIN && me->GetEntry() != NPC_THRALL)
                 return;
 
             me->AddDelayedEvent(1500, [this]() -> void
@@ -3033,15 +3055,16 @@ public:
                 {
                     Creature* target = ObjectAccessor::GetCreature(*me, targetGuid);
 
-                    if (target && target->GetEntry() == 110618)
+                    if (target && target->GetEntry() == NPC_ANCHOR_CRYSTAL_H)
                         return false;
 
                     return !target || !target->isAlive() || target->isTrigger() || !target->IsVisible();
                 });
 
+                // If no other targets are around, and there's an anchoring crystal within 70 yards, attack it
                 if (targetsGuids.empty())
                 {
-                    if (auto target = me->FindNearestCreature(110618, 70, true))
+                    if (auto target = me->FindNearestCreature(NPC_ANCHOR_CRYSTAL_H, 70, true))
                         AttackStart(target);
                     return;
                 }
@@ -3064,7 +3087,7 @@ public:
 
             switch (me->GetEntry())
             {
-            case NPC_SYLVANA:
+            case NPC_SYLVANAS:
                 if (moveType == WAYPOINT_MOTION_TYPE && currentWp == 439151 && pointId == 6)
                 {
                     currentWp = 0;
@@ -3075,20 +3098,21 @@ public:
                         me->AddDelayedEvent(6000, [this]() -> void
                         {
                             if (auto script = me->GetInstanceScript())
-                                if (auto trall = script->instance->GetCreature(script->GetGuidData(90711)))
+                                if (auto thrall = script->instance->GetCreature(script->GetGuidData(NPC_THRALL)))
                                 {
-                                    trall->AI()->Talk(2);
-                                    trall->CastSpell(trall, 224826);
+                                    thrall->AI()->Talk(2);
+                                    thrall->CastSpell(thrall, SPELL_SUMMON_EARTH);
                                 }
 
                             me->AddDelayedEvent(5000, [this]() -> void
                             {
                                 if (auto script = me->GetInstanceScript())
-                                    if (auto trall = script->instance->GetCreature(script->GetGuidData(90711)))
+                                    if (auto thrall = script->instance->GetCreature(script->GetGuidData(NPC_THRALL)))
                                     {
-                                        trall->RemoveAura(224826);
+                                        thrall->RemoveAura(SPELL_SUMMON_EARTH);
                                         Talk(5);
 
+                                        // Not sure what object this is
                                         me->SummonGameObject(254234, 1324.90f, 1735.47f, 18.68f, 3.38f, 0.0f, 0.0f, 0.0f, 0.0f, DAY);
                                         std::list<Creature*> guards;
 
@@ -3121,7 +3145,7 @@ public:
                 if (script->GetData(DATA_SCENARIO_TEAM) == ALLIANCE)
                     return;
 
-            if (me->GetEntry() == 90708) // voldzhin
+            if (me->GetEntry() == NPC_VOLJIN) 
             {
                 if (introEvent)
                     return;
@@ -3137,11 +3161,10 @@ public:
                     me->GetCreatureListInGrid(targets, 100.0f);
                     targets.remove_if([this](Creature* target) -> bool
                     {
-                        if (target && target->GetEntry() == 110618)
+                        if (target && target->GetEntry() == NPC_ANCHOR_CRYSTAL_H)
                             return false;
 
-
-                        return !target || !target->isAlive() || target->isTrigger() || !target->IsVisible() || me->IsFriendlyTo(target) || target->getFaction() == 2876 || target->GetEntry() == 93719;
+                        return !target || !target->isAlive() || target->isTrigger() || !target->IsVisible() || me->IsFriendlyTo(target) || target->getFaction() == 2876 || target->GetEntry() == NPC_FEL_CMDR_AZGALOR;
                     });
 
                     GetNPCAroundAndDoAction([this, targets](Creature* creature) -> void
@@ -3156,14 +3179,14 @@ public:
                         creature->SetHomePosition((*itr)->GetPosition());
                     });
                     me->GetMotionMaster()->MovePoint(0, 642.20f, 1899.23f, 2.26f);
-                    me->AddDelayedEvent(6000, [this]() -> void { GetNPCAroundAndDoAction([](Creature*) {}, 3); DoCast(224822); });
+                    me->AddDelayedEvent(6000, [this]() -> void { GetNPCAroundAndDoAction([](Creature*) {}, 3); DoCast(CONV_S1_CRYSTAL_HINT_H); });
 
                     for (auto target : targets)
                         targetsGuids.push_back(target->GetGUID());
                 });
             }
 
-            if (me->GetEntry() == NPC_SYLVANA)
+            if (me->GetEntry() == NPC_SYLVANAS)
             {
                 Player* p = who->ToPlayer();
                 if (!p)
@@ -3174,7 +3197,7 @@ public:
                     if (InstanceScript *script = me->GetInstanceScript())
                         if (script->getScenarionStep() == 3)
                             if (auto script = me->GetInstanceScript())
-                                if (Creature* voldzhin = script->instance->GetCreature(script->GetGuidData(90708)))
+                                if (Creature* voldzhin = script->instance->GetCreature(script->GetGuidData(NPC_VOLJIN)))
                                     if (voldzhin->GetDistance(me) <= 20)
                                     {
                                         introEvent = true;
@@ -3195,7 +3218,7 @@ public:
                         if (!script)
                             return;
                         
-                        script->SetData(SCENARION_STEP_9, 0);
+                        script->SetData(SCENARIO_STEP_9, 0);
                         me->AI()->DoAction(1);
                     }
                 }
@@ -3206,7 +3229,7 @@ public:
         {
             switch (me->GetEntry())
             {
-            case 90708:
+            case NPC_VOLJIN:
                 switch (action)
                 {
                 case 3:
@@ -3243,7 +3266,7 @@ public:
                 }
                 break;
                 
-            case 90709:
+            case NPC_SYLVANAS:
                 if (auto script = me->GetInstanceScript())
                     if (script->GetData(DATA_SCENARIO_TEAM) == ALLIANCE)
                         if (action < 7)
@@ -3316,7 +3339,7 @@ public:
                             GetNPCAroundAndDoAction([](Creature* creature) {
                                 creature->SetReactState(REACT_AGGRESSIVE);
                                 creature->GetMotionMaster()->Clear();
-                                for (auto id : { 97525 , 93704 , 90712 , 90711 , 90708 , 90710 })
+                                for (auto id : { NPC_TB_BRAVE , NPC_DS_HEADHUNTER , NPC_ER_SHAMAN , NPC_THRALL , NPC_VOLJIN , NPC_BAINE })
                                     if (creature->GetEntry() == id)
                                     {
                                         creature->GetMotionMaster()->MovePath(439153, false, irand(-6, 6), irand(-6, 6));
@@ -3334,7 +3357,7 @@ public:
 
         void UpdateAI(uint32 diff) override
         {
-            if (me->GetEntry() == 90709)
+            if (me->GetEntry() == NPC_SYLVANAS)
             {
                 if (me->GetPositionZ() >= 135.23f)
                 {
@@ -3375,8 +3398,8 @@ public:
                         events.ScheduleEvent(EVENT_1, 2000); // 224782
                         break;
                     case EVENT_2:
-                        DoCast(224721);
-                        events.ScheduleEvent(EVENT_2, 3000); // 224721
+                        DoCast(SPELL_LTNG_BOLT);
+                        events.ScheduleEvent(EVENT_2, 3000); // SPELL_LTNG_BOLT
                         break;
                     case EVENT_3:
                         DoCast(199207);
@@ -3387,8 +3410,8 @@ public:
                         events.ScheduleEvent(EVENT_4, 14000); // 167014
                         break;
                     case EVENT_5:
-                        DoCast(178532);
-                        events.ScheduleEvent(EVENT_5, 13000); // 178532
+                        DoCast(SPELL_CLEAVE);
+                        events.ScheduleEvent(EVENT_5, 13000); // SPELL_CLEAVE
                         break;
                 }
             }
