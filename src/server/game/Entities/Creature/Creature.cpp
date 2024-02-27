@@ -800,7 +800,8 @@ bool Creature::UpdateEntry(uint32 entry, uint32 team, const CreatureData* data)
 
     if (FactionTemplateEntry const* factionTemplate = sFactionTemplateStore.LookupEntry(cInfo->faction))
     {
-        if (factionTemplate->Flags & FACTION_TEMPLATE_FLAG_PVP)
+        // Burning Legion Invaders fix - Make sure player-hostile factions aren't pvp-flagged
+        if (factionTemplate->Flags & FACTION_TEMPLATE_FLAG_PVP && !IsHostileToPlayers())
             SetPvP(true);
         else
             SetPvP(false);
