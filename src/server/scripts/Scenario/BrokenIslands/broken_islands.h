@@ -69,6 +69,8 @@ enum Spells
     SPELL_STARFIRE = 171777,
     SPELL_S1_TELEPORT_A = 199358,
     SPELL_S1_TELEPORT_H = 225152,
+
+    SPELL_LEGION_BOMBARDMENT = 183341,
 };
 
 enum Conversations
@@ -113,6 +115,7 @@ enum Conversations
 
 enum Paths
 {
+    PATH_ANGELICA = 439135,
     PATH_ALLIANCE_1 = 439136,
     PATH_ALLIANCE_2 = 439137,
     PATH_ALLIANCE_3 = 439144,
@@ -209,6 +212,13 @@ enum eGameObects
     //Spires of Woe destroyed
     GO_SPIRES_OF_WOE = 240194,
     GO_ICE_BRIDGE = 242549,
+    GO_LEGION_CAGE = 240535,
+};
+
+enum DisplayIDs
+{
+    DISPLAY_ID_SPIRE = 27285,
+    DISPLAY_ID_CAGE = 26854
 };
 
 #endif

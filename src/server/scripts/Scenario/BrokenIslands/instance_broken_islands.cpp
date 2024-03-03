@@ -57,7 +57,6 @@ public:
         WorldLocation loc_res_pla;  // for respawn
         bool firstEnter = false;
 
-
         void OnPlayerEnter(Player* player) override
         {
             if (!team)
@@ -66,35 +65,63 @@ public:
             if (!firstEnter)
             {
                 firstEnter = true;
+                
                 player->AddDelayedEvent(5000, [player]() -> void
                 {
                     if (player->GetMapId() != 1460)
                         return;
 
                     player->CreateConversation(player->GetTeam() == ALLIANCE ? CONV_A1 : CONV_H1);
-                    player->AddDelayedEvent(15000, [player]() -> void
-                    {
-                        if (player->GetMapId() != 1460)
-                            return;
+                });
 
-                        player->CreateConversation(player->GetTeam() == ALLIANCE ? CONV_A2 : CONV_H2);
-                        player->AddDelayedEvent(13100, [player]() -> void
-                        {
-                            if (player->GetMapId() != 1460)
-                                return;
+                player->AddDelayedEvent(15000, [player]() -> void
+                {
+                    if (player->GetMapId() != 1460)
+                        return;
 
-                            player->CreateConversation(player->GetTeam() == ALLIANCE ? CONV_A3 : CONV_H3);
-                        });
-                    });
+                    // This needs more work. She moves, but then disappears, why?
+                    // Probably need to make sure endpoint is on map 1628
+
+                    //if (Unit* angelica = player->FindNearestCreature(NPC_CAPT_ANGELICA_BS, 20.0f))
+                    //{
+                    //    if (Transport* transport = angelica->GetTransport())
+                    //    {
+                    //        float x = angelica->GetTransOffsetX() + 2.0;
+                    //        float y = angelica->GetTransOffsetY() + 2.0;
+                    //        float z = angelica->GetTransOffsetZ();
+
+                    //        //transport->CalculatePassengerPosition(x, y, z);
+                    //        // angelica->SetWalk(true);
+                    //        angelica->GetMotionMaster()->MovePoint(0, x, y, z);
+                    //        angelica->ToCreature()->SetHomePosition(x, y, z, angelica->GetOrientation());
+                    //    }
+                    //}
+
+                    player->CreateConversation(player->GetTeam() == ALLIANCE ? CONV_A2 : CONV_H2);
+                });
+
+                player->AddDelayedEvent(60000, [player]() -> void
+                {
+                    if (player->GetMapId() != 1460)
+                        return;
+
+                    player->CreateConversation(player->GetTeam() == ALLIANCE ? CONV_A3 : CONV_H3);
+
+                    player->CastSpell(player, SPELL_LEGION_BOMBARDMENT, true);
+                });
+
+                player->AddDelayedEvent(78000, [player, this]() -> void
+                {
+                    if (player->GetMapId() != 1460)
+                        return;
+                       
+                    // Bypass spell to start stage 2 because it won't reliably cast
+                    enter_stage2(player);
                 });
             }
 
             player->KilledMonsterCredit(NPC_CAPT_ANGELICA);
             player->KilledMonsterCredit(NPC_CPT_RUSSO);
-
-            player->ApplyModFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_IN_PVP, true);
-            player->ApplyModFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_PVP_TIMER, false);
-            player->UpdatePvP(true, true);
 
             for (TransportHashSet::iterator i = player->GetMap()->m_Transports.begin(); i != player->GetMap()->m_Transports.end(); ++i)
             {
@@ -115,8 +142,9 @@ public:
                         {
                             //X: 2.39286 Y: 1.694546 Z: 5.205733 O: 3.155922
                             //init.MoveTo(2.39286f, 1.694546f, 5.205733f, false, true);
+                            
                             // Raise Z to prevent players from falling through boat
-                            init.MoveTo(2.39286f, 1.694546f, 5.705733f, false, true);
+                            init.MoveTo(2.39286f, 1.694546f, 6.005733f, false, true);
                             init.SetFacing(3.155922f);
                         }else
                         {
@@ -134,6 +162,38 @@ public:
                     });
                 }
             }
+        }
+
+        // Code moved here from broken_islands::spell_bi_enter_stage1()
+        void enter_stage2(Player* player)
+        {
+            Map* m = player->FindMap();
+            if (!m)
+                return;
+
+            InstanceScript* script = player->GetInstanceScript();
+            if (!script)
+                return;
+
+            if (script->getScenarionStep() != 0)
+                return;
+
+            ObjectGuid guid = script->GetGuidData(player->GetTeam() == HORDE ? GO_HORDE_SHIP : GO_ALLIANCE_SHIP);
+            if (!guid)
+                return;
+
+            if (GameObject *go = m->GetGameObject(guid)) {
+                go->SetVisible(true);
+            }
+
+            //scenario ID 1189 step 0
+            player->UpdateAchievementCriteria(CRITERIA_TYPE_SCRIPT_EVENT_2, 54140);
+
+            //scenario ID 786 step 0
+            player->UpdateAchievementCriteria(CRITERIA_TYPE_SCRIPT_EVENT_2, 44060);
+
+            player->SendMovieStart(486); // Cinematic for transition to stage 2
+            player->CastSpell(player, player->GetTeam() == ALLIANCE ? SPELL_S1_TELEPORT_A : SPELL_S1_TELEPORT_H, false);
         }
         
         WorldLocation* GetClosestGraveYard(float x, float y, float z) override

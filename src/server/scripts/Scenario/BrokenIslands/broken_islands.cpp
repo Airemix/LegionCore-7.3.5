@@ -15,7 +15,7 @@ The Broken Islands Scenario
 #include "CreatureGroups.h"
 // #include "PrecompiledHeaders/ScriptPCH.h"
 
-#define GOSSIP_ACCEPT_DUEL      "Let''s duel"
+#define GOSSIP_ACCEPT_DUEL      "Let's duel!"
 #define EVENT_SPECIAL 20
 
 enum eDuelEnums
@@ -521,6 +521,8 @@ public:
     };
 };
 
+// Enter LFG for Broken Shore
+// TODO: Figure out whether this or spell_q42740 puts players in the queue
 class sceneTrigger_enterBrockenShores : public SceneTriggerScript
 {
 public:
@@ -580,6 +582,10 @@ public:
     }
 };
 
+// The areatrigger for the phase update spell does not cast until player's first action while in that area
+// May be because player enters on a transport, will investigate further.
+// Currently instance_broken_islands::OnPlayerEnter handles the transition.
+// Leaving code here for if/when areatrigger issue is solved.
 
 //! 217781 phase update.
 class spell_bi_enter_stage1 : public SpellScriptLoader
@@ -591,7 +597,6 @@ public:
     {
         PrepareAuraScript(spell_bi_enter_stage1_AuraScript);
 
-
         void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
         {
             if (Unit* caster = GetCaster())
@@ -600,10 +605,10 @@ public:
                 if (!player)
                     return;
 
-
                 Map* m = player->FindMap();
                 if (!m)
                     return;
+
                 InstanceScript *script = player->GetInstanceScript();
                 if (!script)
                     return;
@@ -618,12 +623,11 @@ public:
                 if (script->getScenarionStep() != 0)
                     return;
 
-                //scenation ID 1189 step 0
+                //scenario ID 1189 step 0
                 player->UpdateAchievementCriteria(CRITERIA_TYPE_SCRIPT_EVENT_2, 54140);
 
-                //scenation ID 786 step 0
+                //scenario ID 786 step 0
                 player->UpdateAchievementCriteria(CRITERIA_TYPE_SCRIPT_EVENT_2, 44060);
-
 
                 Map::PlayerList const &PlList = player->GetMap()->GetPlayers();
 
@@ -641,7 +645,7 @@ public:
                         }
 
                         plr->SendMovieStart(486); // Scene upon landing
-                        plr->CastSpell(plr, plr->GetTeam() == ALLIANCE ? SPELL_S1_TELEPORT_A : SPELL_S1_TELEPORT_H, false); // Stage 1 teleport for Alliance and Horde, respectively
+                        plr->CastSpell(plr, plr->GetTeam() == ALLIANCE ? SPELL_S1_TELEPORT_A : SPELL_S1_TELEPORT_H, false);
                     }
             }
         }
