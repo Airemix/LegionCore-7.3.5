@@ -11,4 +11,4 @@ UPDATE `conversation_data` SET `idx`=0, `textId`=0 WHERE  `entry`=925 AND `id`=2
 UPDATE `spell_scene` SET `ScriptName`='' WHERE  `SceneScriptPackageID`=1531 AND `MiscValue`=1157;
 
 --Raising Z of entrance teleport prevents players from falling into the boat
-UPDATE `legionworld`.`lfg_entrances` SET `position_z`=6.00753 WHERE  `dungeonId`=1027;
+UPDATE `lfg_entrances` SET `position_z`=6.00753 WHERE  `dungeonId`=1027;
